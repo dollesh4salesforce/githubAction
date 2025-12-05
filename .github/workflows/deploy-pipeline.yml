@@ -61,7 +61,7 @@ jobs:
         run: npm ci
 
       - name: Setup Salesforce CLI (sf)
-        uses: salesforcecli/github-action@v1
+        uses: salesforcecli/action-setup@v3
         with:
           install: "sf"
 
@@ -115,10 +115,9 @@ jobs:
         run: npm ci
 
       - name: Setup Salesforce CLI (sf)
-        uses: salesforcecli/github-action@v1
+        uses: salesforcecli/action-setup@v3
         with:
           install: "sf"
-
       - name: Authenticate UAT via JWT
         env:
           SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
@@ -169,10 +168,9 @@ jobs:
         run: npm ci
 
       - name: Setup Salesforce CLI (sf)
-        uses: salesforcecli/github-action@v1
+        uses: salesforcecli/action-setup@v3
         with:
           install: "sf"
-
       - name: Authenticate Prod via JWT
         env:
           SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
