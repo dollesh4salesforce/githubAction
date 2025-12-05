@@ -34,10 +34,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Salesforce CLI (sf)
+      - name: Install Salesforce CLI (local)
         run: |
-          npm install -g @salesforce/cli
-          sf --version
+          npm install --no-save @salesforce/cli
+          npx sf --version
 
       - name: Authenticate Dev via JWT
         env:
@@ -47,9 +47,9 @@ jobs:
           SF_LOGIN_URL: ${{ secrets.SF_LOGIN_URL }}
         run: |
           echo "$SF_JWT_KEY" > server.key
-          sf org login jwt --username "$SF_DEV_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias DevOrg --set-default
+          npx sf org login jwt --username "$SF_DEV_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias DevOrg --set-default
           rm -f server.key
-          sf org display --target-org DevOrg
+          npx sf org display --target-org DevOrg
 
       - name: Lint
         run: npm run lint
@@ -58,7 +58,7 @@ jobs:
         run: npm run test:unit --if-present
 
       - name: Deploy metadata to Dev
-        run: sf project deploy start --target-org DevOrg --source-dir force-app --ignore-conflicts --wait 33
+        run: npx sf project deploy start --target-org DevOrg --source-dir force-app --ignore-conflicts --wait 33
 
       - name: Run Apex tests (local)
-        run: sf apex run test --result-format human --wait 30 --tests RunLocalTests --target-org DevOrg || true
+        run: npx sf apex run test --result-format human --wait 30 --tests RunLocalTests --target-org DevOrg || true

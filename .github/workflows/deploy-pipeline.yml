@@ -118,6 +118,10 @@ jobs:
         run: |
           npm install -g @salesforce/cli
           sf --version
+        - name: Install Salesforce CLI (local)
+          run: |
+            npm install --no-save @salesforce/cli
+            npx sf --version
       - name: Authenticate UAT via JWT
         env:
           SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
@@ -126,15 +130,19 @@ jobs:
           SF_LOGIN_URL: ${{ secrets.SF_LOGIN_URL }}
         run: |
           echo "$SF_JWT_KEY" > server.key
-          sf org login jwt --username "$SF_UAT_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias UATOrg --set-default
+            npx sf org login jwt --username "$SF_DEV_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias DevOrg --set-default
           rm -f server.key
-          sf org display --target-org UATOrg
+            npx sf org display --target-org DevOrg
 
-      - name: Validate to UAT (check-only + tests)
+          run: npx sf project deploy start --target-org DevOrg --source-dir force-app --ignore-conflicts --wait 33
         run: sf project deploy validate --target-org UATOrg --source-dir force-app --test-level RunLocalTests --wait 33
 
       - name: Deploy to UAT
         if: success()
+        - name: Install Salesforce CLI (local)
+          run: |
+            npm install --no-save @salesforce/cli
+            npx sf --version
         run: sf project deploy start --target-org UATOrg --source-dir force-app --wait 33
 
   prod:
@@ -143,17 +151,21 @@ jobs:
     runs-on: ubuntu-latest
     needs: [uat]
     environment:
-      name: production
+            npx sf org login jwt --username "$SF_UAT_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias UATOrg --set-default
       url: https://login.salesforce.com
-    steps:
+            npx sf org display --target-org UATOrg
       - name: Checkout repository
-        uses: actions/checkout@v4
+          run: npx sf project deploy validate --target-org UATOrg --source-dir force-app --test-level RunLocalTests --wait 33
         with:
-          ref: ${{ inputs.ref }}
+          run: npx sf project deploy start --target-org UATOrg --source-dir force-app --wait 33
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
+        - name: Install Salesforce CLI (local)
+          run: |
+            npm install --no-save @salesforce/cli
+            npx sf --version
           node-version: "18"
 
       - name: Cache npm
@@ -162,13 +174,13 @@ jobs:
           path: ~/.npm
           key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            npm-${{ runner.os }}-
+            npx sf org login jwt --username "$SF_PROD_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias ProdOrg --set-default
 
-      - name: Install dependencies
+            npx sf org display --target-org ProdOrg
         run: npm ci
-
+          run: npx sf project deploy validate --target-org ProdOrg --source-dir force-app --test-level RunLocalTests --wait 60
       - name: Install Salesforce CLI (sf)
-        run: |
+          run: npx sf project deploy start --target-org ProdOrg --source-dir force-app --wait 60
           npm install -g @salesforce/cli
           sf --version
       - name: Authenticate Prod via JWT

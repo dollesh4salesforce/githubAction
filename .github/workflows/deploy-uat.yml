@@ -32,10 +32,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Salesforce CLI (sf)
+      - name: Install Salesforce CLI (local)
         run: |
-          npm install -g @salesforce/cli
-          sf --version
+          npm install --no-save @salesforce/cli
+          npx sf --version
 
       - name: Authenticate UAT via JWT
         env:
@@ -45,13 +45,13 @@ jobs:
           SF_LOGIN_URL: ${{ secrets.SF_LOGIN_URL }}
         run: |
           echo "$SF_JWT_KEY" > server.key
-          sf org login jwt --username "$SF_UAT_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias UATOrg --set-default
+          npx sf org login jwt --username "$SF_UAT_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias UATOrg --set-default
           rm -f server.key
-          sf org display --target-org UATOrg
+          npx sf org display --target-org UATOrg
 
       - name: Validate Deploy to UAT (check-only)
-        run: sf project deploy validate --target-org UATOrg --source-dir force-app --test-level RunLocalTests --wait 33
+        run: npx sf project deploy validate --target-org UATOrg --source-dir force-app --test-level RunLocalTests --wait 33
 
       - name: Deploy to UAT
         if: success()
-        run: sf project deploy start --target-org UATOrg --source-dir force-app --wait 33
+        run: npx sf project deploy start --target-org UATOrg --source-dir force-app --wait 33
