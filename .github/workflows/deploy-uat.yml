@@ -32,10 +32,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Salesforce CLI
-        uses: salesforcecli/action-setup@v3
-        with:
-          install: "sf"
+      - name: Install Salesforce CLI (sf)
+        run: |
+          npm install -g @salesforce/cli
+          sf --version
 
       - name: Authenticate UAT via JWT
         env:
