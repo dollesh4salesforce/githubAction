@@ -1,0 +1,57 @@
+name: Deploy to UAT
+
+on:
+  push:
+    branches:
+      - uat
+  workflow_dispatch:
+
+jobs:
+  deploy-uat:
+    runs-on: ubuntu-latest
+    environment:
+      name: uat
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Salesforce CLI
+        uses: salesforcecli/action-setup@v3
+        with:
+          install: "sf"
+
+      - name: Authenticate UAT via JWT
+        env:
+          SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+          SF_UAT_USERNAME: ${{ secrets.SF_UAT_USERNAME }}
+          SF_LOGIN_URL: ${{ secrets.SF_LOGIN_URL }}
+        run: |
+          echo "$SF_JWT_KEY" > server.key
+          sf org login jwt --username "$SF_UAT_USERNAME" --jwt-key-file server.key --client-id "$SF_CLIENT_ID" --instance-url "$SF_LOGIN_URL" --alias UATOrg --set-default
+          rm -f server.key
+          sf org display --target-org UATOrg
+
+      - name: Validate Deploy to UAT (check-only)
+        run: sf project deploy validate --target-org UATOrg --source-dir force-app --test-level RunLocalTests --wait 33
+
+      - name: Deploy to UAT
+        if: success()
+        run: sf project deploy start --target-org UATOrg --source-dir force-app --wait 33
